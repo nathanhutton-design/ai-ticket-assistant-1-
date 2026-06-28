@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI-Powered Ticket Management Assistant</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --accent: #00c2ff;
+    --accent2: #7c3aed;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --font-display: 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-display); min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .badge-alert { background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+  .avatar { width: 32px; height: 32px; background: var(--accent2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  /* LAYOUT */
+  .layout { display: flex; height: calc(100vh - 60px); }
+  nav { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 16px 0; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; }
+  .nav-label { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; padding: 12px 20px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 13px; color: var(--muted); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(0,194,255,0.06); font-weight: 600; }
+  .nav-count { margin-left: auto; background: var(--surface2); border: 1px solid var(--border); font-size: 11px; padding: 1px 6px; border-radius: 10px; }
+
+  main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+
+  /* STAT CARDS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .stat-card.blue::before { background: var(--accent); }
+  .stat-card.purple::before { background: var(--accent2); }
+  .stat-card.warn::before { background: var(--warn); }
+  .stat-card.danger::before { background: var(--danger); }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+  .stat-value.blue { color: var(--accent); }
+  .stat-value.purple { color: var(--accent2); }
+  .stat-value.warn { color: var(--warn); }
+  .stat-value.danger { color: var(--danger); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot.blue { background: var(--accent); }
+  .dot.danger { background: var(--danger); }
+  .dot.warn { background: var(--warn); }
+
+  /* FILTERS */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-btn { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,194,255,0.08); }
+  .search-bar { flex: 1; max-width: 240px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 12px; outline: none; }
+  .search-bar::placeholder { color: var(--muted); }
+
+  /* TABLE */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { background: var(--surface2); }
+  th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* PRIORITY BADGES */
+  .priority { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .priority.critical { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+  .priority.high { background: rgba(245,158,11,0.15); color: var(--warn); border: 1px solid rgba(245,158,11,0.3); }
+  .priority.medium { background: rgba(0,194,255,0.1); color: var(--accent); border: 1px solid rgba(0,194,255,0.2); }
+  .priority.low { background: rgba(139,148,158,0.1); color: var(--muted); border: 1px solid var(--border); }
+
+  /* STATUS */
+  .status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .status.open .status-dot { background: var(--warn); }
+  .status.progress .status-dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .status.pending .status-dot { background: var(--muted); }
+  .status.resolved .status-dot { background: var(--success); }
+
+  /* RISK SCORE */
+  .risk-bar { display: flex; align-items: center; gap: 8px; }
+  .risk-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; max-width: 80px; }
+  .risk-fill { height: 100%; border-radius: 2px; }
+  .risk-fill.low { background: var(--success); }
+  .risk-fill.med { background: var(--warn); }
+  .risk-fill.high { background: var(--danger); }
+  .risk-pct { font-size: 12px; font-weight: 700; min-width: 32px; }
+  .risk-pct.low { color: var(--success); }
+  .risk-pct.med { color: var(--warn); }
+  .risk-pct.high { color: var(--danger); }
+
+  /* ACTION BUTTONS */
+  .btn { padding: 6px 12px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: var(--danger); }
+  .btn-sm { padding: 4px 10px; font-size: 11px; border-radius: 6px; }
+
+  /* AI RECOMMENDATION PANEL */
+  .ai-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .ai-badge { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, rgba(0,194,255,0.15), rgba(124,58,237,0.15)); border: 1px solid rgba(0,194,255,0.3); color: var(--accent); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; margin-bottom: 14px; letter-spacing: 0.5px; }
+  .ai-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .ai-card:last-child { margin-bottom: 0; }
+  .ai-ticket-id { font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+  .ai-rec-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .ai-rec-text strong { color: var(--accent); }
+  .ai-confidence { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .confidence-val { color: var(--success); font-weight: 700; }
+  .ai-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* ALERTS */
+  .alert-list { display: flex; flex-direction: column; gap: 10px; }
+  .alert-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; border-left: 3px solid transparent; }
+  .alert-item.critical { border-left-color: var(--danger); }
+  .alert-item.warning { border-left-color: var(--warn); }
+  .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .alert-content { flex: 1; }
+  .alert-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .alert-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .alert-time { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .alert-ack { font-size: 11px; padding: 4px 10px; }
+
+  /* WORKLOAD */
+  .workload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .workload-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .tech-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .tech-tier { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+  .workload-bar-track { background: var(--border); border-radius: 4px; height: 6px; margin-bottom: 6px; }
+  .workload-bar-fill { height: 100%; border-radius: 4px; }
+  .wl-low { background: var(--success); }
+  .wl-med { background: var(--warn); }
+  .wl-high { background: var(--danger); }
+  .workload-stats { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+  /* PII SECTION */
+  .pii-section { background: var(--surface); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; padding: 20px; }
+  .pii-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .pii-title { font-size: 14px; font-weight: 700; color: var(--danger); }
+  .pii-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .pii-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .pii-type { font-size: 11px; font-weight: 700; color: var(--danger); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .pii-example { font-size: 12px; color: var(--text); margin-bottom: 4px; }
+  .pii-note { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .pii-masked { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 11px; color: var(--danger); }
+  .pii-safe { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 11px; color: var(--success); }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 560px; max-width: 95vw; max-height: 85vh; overflow-y: auto; padding: 28px; }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .modal-field { margin-bottom: 14px; }
+  .modal-label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .modal-value { font-size: 13px; color: var(--text); padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; }
+  .modal-select { width: 100%; padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; outline: none; cursor: pointer; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .modal-textarea { width: 100%; padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; font-family: inherit; resize: vertical; min-height: 80px; outline: none; }
+
+  /* AI CHAT */
+  .ai-chat-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .ai-chat-log { min-height: 120px; max-height: 240px; overflow-y: auto; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .chat-msg { padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height: 1.5; max-width: 85%; }
+  .chat-msg.ai { background: rgba(0,194,255,0.08); border: 1px solid rgba(0,194,255,0.2); color: var(--text); align-self: flex-start; }
+  .chat-msg.user { background: var(--surface2); border: 1px solid var(--border); color: var(--text); align-self: flex-end; }
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input { flex: 1; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; font-family: inherit; outline: none; }
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-send { padding: 10px 18px; background: var(--accent); color: #000; border: none; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; }
+  .chat-send:hover { opacity: 0.85; }
+  .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+  .typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; }
+  .typing span { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; animation: bounce 1s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+  /* REASSIGN COUNT */
+  .reassign-tag { font-size: 11px; padding: 2px 7px; border-radius: 4px; }
+  .reassign-tag.ok { background: rgba(34,197,94,0.1); color: var(--success); }
+  .reassign-tag.warn { background: rgba(245,158,11,0.15); color: var(--warn); }
+  .reassign-tag.danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .full-col { grid-column: 1 / -1; }
+
+  /* PII SCANNER */
+  .pii-scan-banner { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .pii-scan-banner .scan-icon { font-size: 24px; flex-shrink: 0; }
+  .pii-scan-banner h3 { font-size: 14px; font-weight: 700; color: var(--danger); margin-bottom: 3px; }
+  .pii-scan-banner p { font-size: 12px; color: var(--muted); }
+  .scan-actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+
+  .pii-ticket-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+  .pii-ticket-card.flagged { border-color: rgba(239,68,68,0.5); }
+  .pii-ticket-card.hipaa { border-color: rgba(239,68,68,0.8); box-shadow: 0 0 0 1px rgba(239,68,68,0.2); }
+  .pii-ticket-card.clean { border-color: rgba(34,197,94,0.4); }
+  .pii-ticket-card.scanning { border-color: rgba(0,194,255,0.3); }
+
+  .ptc-header { padding: 14px 18px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+  .ptc-id { font-family: monospace; font-size: 12px; color: var(--accent); font-weight: 700; }
+  .ptc-cat { font-size: 12px; color: var(--muted); }
+  .ptc-status-badge { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .ptc-status-badge.flagged { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+  .ptc-status-badge.hipaa { background: rgba(239,68,68,0.25); color: #ff8080; border: 1px solid rgba(239,68,68,0.5); animation: pulse-badge 1.5s infinite; }
+  .ptc-status-badge.clean { background: rgba(34,197,94,0.12); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+  .ptc-status-badge.scanning { background: rgba(0,194,255,0.1); color: var(--accent); border: 1px solid rgba(0,194,255,0.2); }
+  .ptc-status-badge.pending { background: rgba(139,148,158,0.1); color: var(--muted); border: 1px solid var(--border); }
+  @keyframes pulse-badge { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+
+  .ptc-body { padding: 14px 18px; }
+  .ptc-desc-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .ptc-desc { font-size: 12px; color: var(--text); line-height: 1.6; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-family: monospace; }
+  .ptc-desc .pii-hit { background: rgba(239,68,68,0.25); color: #ff8080; border-radius: 3px; padding: 1px 4px; font-weight: 700; }
+  .ptc-desc .hipaa-hit { background: rgba(239,68,68,0.4); color: #ffaaaa; border-radius: 3px; padding: 1px 4px; font-weight: 700; border-bottom: 2px solid var(--danger); }
+
+  .ptc-findings { margin-top: 12px; }
+  .finding-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; font-size: 12px; }
+  .finding-item.critical { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); }
+  .finding-item.warning { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+  .finding-label { font-weight: 700; min-width: 90px; }
+  .finding-label.critical { color: var(--danger); }
+  .finding-label.warning { color: var(--warn); }
+  .finding-detail { color: var(--muted); flex: 1; }
+  .finding-redact { margin-left: auto; }
+
+  .ptc-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--surface2); }
+  .route-blocked { font-size: 11px; color: var(--danger); display: flex; align-items: center; gap: 5px; }
+  .route-clear { font-size: 11px; color: var(--success); display: flex; align-items: center; gap: 5px; }
+
+  .scan-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .scan-sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; text-align: center; }
+  .scan-sum-val { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .scan-sum-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(0,194,255,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .workload-grid { grid-template-columns: repeat(2, 1fr); }
+    .pii-grid { grid-template-columns: 1fr; }
+    nav { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🎫</div>
+    AI Ticket Management Assistant
+  </div>
+  <div class="header-right">
+    <span style="font-size:12px;color:var(--muted);">Johns Hopkins Health System — IT Ops</span>
+    <span class="badge-alert" id="alertCount">3 Alerts</span>
+    <div class="avatar">NH</div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav>
+    <div class="nav-label">Manager View</div>
+    <div class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard <span class="nav-count">24</span></div>
+    <div class="nav-item" onclick="showSection('queue')">🎫 Ticket Queue <span class="nav-count">18</span></div>
+    <div class="nav-item" onclick="showSection('alerts')">🔔 Alerts <span class="nav-count" style="background:rgba(239,68,68,0.2);color:var(--danger);border-color:rgba(239,68,68,0.3);">3</span></div>
+    <div class="nav-item" onclick="showSection('workload')">👥 Workload</div>
+    <div class="nav-label">AI Tools</div>
+    <div class="nav-item" onclick="showSection('recommendations')">🤖 AI Routing</div>
+    <div class="nav-item" onclick="showSection('assistant')">💬 AI Assistant</div>
+    <div class="nav-label">Compliance</div>
+    <div class="nav-item" onclick="showSection('piiscanner')">🛡️ PII Scanner <span class="nav-count" id="piiNavCount" style="background:rgba(239,68,68,0.2);color:var(--danger);border-color:rgba(239,68,68,0.3);">—</span></div>
+    <div class="nav-item" onclick="showSection('pii')">🔒 PII Controls</div>
+  </nav>
+
+  <main id="mainContent">
+
+    <!-- DASHBOARD -->
+    <section id="section-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-label">Active Tickets</div>
+          <div class="stat-value blue">24</div>
+          <div class="stat-sub">↑ 3 since yesterday</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-label">At SLA Risk</div>
+          <div class="stat-value danger">6</div>
+          <div class="stat-sub">Require immediate action</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-label">Avg Reassignments</div>
+          <div class="stat-value warn">1.8</div>
+          <div class="stat-sub">Target: &lt; 1.5 per ticket</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">SLA Compliance</div>
+          <div class="stat-value purple">79%</div>
+          <div class="stat-sub">Target: ≥ 85% at 60 days</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="section-header">
+            <div class="section-title"><span class="dot danger"></span> Critical Alerts</div>
+          </div>
+          <div class="alert-list">
+            <div class="alert-item critical">
+              <div class="alert-icon">🚨</div>
+              <div class="alert-content">
+                <div class="alert-title">TKT-0041 — Reassigned 3× in 4 hours</div>
+                <div class="alert-desc">Network outage ticket cycling between T1 and T2 without resolution. SLA breach in 47 minutes.</div>
+                <div class="alert-time">⏰ 14 min ago</div>
+              </div>
+              <button class="btn btn-danger btn-sm alert-ack" onclick="acknowledgeAlert(this, 'TKT-0041')">Act Now</button>
+            </div>
+            <div class="alert-item warning">
+              <div class="alert-icon">⚠️</div>
+              <div class="alert-content">
+                <div class="alert-title">TKT-0038 — Stalled in "Pending" 6+ hours</div>
+                <div class="alert-desc">High-priority VPN access issue. Status unchanged. Predicted breach in 2.1 hours.</div>
+                <div class="alert-time">⏰ 1 hr ago</div>
+              </div>
+              <button class="btn btn-ghost btn-sm alert-ack" onclick="acknowledgeAlert(this, 'TKT-0038')">Acknowledge</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-header">
+            <div class="section-title"><span class="dot blue"></span> AI Routing Recommendations</div>
+          </div>
+          <div class="ai-badge">🤖 AI-Powered</div>
+          <div class="ai-card">
+            <div style="flex:1">
+              <div class="ai-ticket-id">TKT-0041 · Network Outage</div>
+              <div class="ai-rec-text">Route to <strong>M. Torres (T3)</strong> — lowest reassignment rate for network issues (0.4 avg), currently at 42% capacity.</div>
+              <div class="ai-confidence">Confidence: <span class="confidence-val">91%</span></div>
+            </div>
+            <div class="ai-actions">
+              <button class="btn btn-primary btn-sm" onclick="acceptRec('TKT-0041', 'M. Torres')">Accept</button>
+              <button class="btn btn-ghost btn-sm" onclick="openModal('TKT-0041')">Override</button>
+            </div>
+          </div>
+          <div class="ai-card">
+            <div style="flex:1">
+              <div class="ai-ticket-id">TKT-0038 · VPN Access</div>
+              <div class="ai-rec-text">Route to <strong>D. Kim (T2)</strong> — resolved 12 similar VPN tickets in last 30 days, avg resolution 1.2 hrs.</div>
+              <div class="ai-confidence">Confidence: <span class="confidence-val">84%</span></div>
+            </div>
+            <div class="ai-actions">
+              <button class="btn btn-primary btn-sm" onclick="acceptRec('TKT-0038', 'D. Kim')">Accept</button>
+              <button class="btn btn-ghost btn-sm" onclick="openModal('TKT-0038')">Override</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TICKET QUEUE -->
+    <section id="section-queue" style="display:none">
+      <div class="section-header">
+        <div class="section-title"><span class="dot blue"></span> Active Ticket Queue</div>
+        <div class="filters">
+          <input class="search-bar" type="text" placeholder="🔍 Search tickets..." oninput="filterTable(this.value)" />
+          <button class="filter-btn active" onclick="filterPriority('all',this)">All</button>
+          <button class="filter-btn" onclick="filterPriority('critical',this)">Critical</button>
+          <button class="filter-btn" onclick="filterPriority('high',this)">High</button>
+          <button class="filter-btn" onclick="filterPriority('medium',this)">Medium</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="ticketTable">
+          <thead>
+            <tr>
+              <th>Ticket ID</th>
+              <th>Category</th>
+              <th>Priority</th>
+              <th>Assignee</th>
+              <th>Status</th>
+              <th>SLA Risk</th>
+              <th>Reassigns</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ticketBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section id="section-alerts" style="display:none">
+      <div class="section-header">
+        <div class="section-title"><span class="dot danger"></span> Active Bottleneck Alerts</div>
+      </div>
+      <div class="alert-list" id="alertList">
+        <div class="alert-item critical" data-id="a1">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-content">
+            <div class="alert-title">TKT-0041 — Excessive Reassignments (3×)</div>
+            <div class="alert-desc">Threshold exceeded: ticket reassigned 3 times. Network outage still unresolved. SLA breach imminent in 47 minutes.</div>
+            <div class="alert-time">⏰ 14 min ago · Threshold: &gt;2 reassignments</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="ackAlert('a1')">Acknowledge</button>
+        </div>
+        <div class="alert-item warning" data-id="a2">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <div class="alert-title">TKT-0038 — Stalled Status (6.2 hrs)</div>
+            <div class="alert-desc">Ticket has been in "Pending" for 6.2 hours — 3.1× longer than historical average for VPN-class tickets.</div>
+            <div class="alert-time">⏰ 1 hr ago · Historical avg: 2.0 hrs in Pending</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="ackAlert('a2')">Acknowledge</button>
+        </div>
+        <div class="alert-item warning" data-id="a3">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <div class="alert-title">TKT-0029 — Uneven Workload Detected</div>
+            <div class="alert-desc">Technician R. Patel currently holds 8 open tickets — 2.4× team average. Risk of burnout and quality degradation.</div>
+            <div class="alert-time">⏰ 3 hrs ago</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="ackAlert('a3')">Acknowledge</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- WORKLOAD -->
+    <section id="section-workload" style="display:none">
+      <div class="section-header">
+        <div class="section-title"><span class="dot blue"></span> Team Workload Distribution</div>
+      </div>
+      <div class="workload-grid" id="workloadGrid"></div>
+    </section>
+
+    <!-- AI RECOMMENDATIONS -->
+    <section id="section-recommendations" style="display:none">
+      <div class="section-header">
+        <div class="section-title"><span class="dot blue"></span> AI Routing Recommendations</div>
+      </div>
+      <div class="ai-panel">
+        <div class="ai-badge">🤖 AI-Powered · Rule-Based MVP Engine</div>
+        <div id="recList"></div>
+      </div>
+    </section>
+
+    <!-- AI ASSISTANT CHAT -->
+    <section id="section-assistant" style="display:none">
+      <div class="section-header">
+        <div class="section-title"><span class="dot blue"></span> AI Ticket Assistant</div>
+      </div>
+      <div class="ai-chat-section">
+        <div class="ai-badge">🤖 Powered by Claude · Ask about tickets, SLA risk, routing, or team performance</div>
+        <div class="ai-chat-log" id="chatLog">
+          <div class="chat-msg ai">Hi! I'm your AI Ticket Assistant. Ask me about any ticket, SLA risk, technician workload, or routing recommendations. What do you need?</div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chatInput" type="text" placeholder="e.g. Why is TKT-0041 at risk? Who should handle network issues?" onkeydown="if(event.key==='Enter')sendChat()" />
+          <button class="chat-send" id="chatSend" onclick="sendChat()">Send ↑</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PII CONTROLS -->
+    <section id="section-pii" style="display:none">
+      <div class="section-header">
+        <div class="section-title"><span class="dot danger"></span> PII in IT Operations — What to Protect</div>
+      </div>
+      <div class="pii-section">
+        <div class="pii-header">
+          <span style="font-size:20px">🔒</span>
+          <div>
+            <div class="pii-title">PII Exposure Risk in Helpdesk Data</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">Your helpdesk tickets contain sensitive user data. Here's what to protect, anonymize, or mask.</div>
+          </div>
+        </div>
+        <div class="pii-grid">
+          <div class="pii-card">
+            <div class="pii-type">🏥 User Identity</div>
+            <div class="pii-example">Employee name, username, employee ID, department</div>
+            <div class="pii-note" style="margin:6px 0">Raw: <span class="pii-masked">John Smith · EMP-4821</span></div>
+            <div class="pii-note">Safe: <span class="pii-safe">USR-ANON-4821 · Dept: Finance</span></div>
+            <div class="pii-note" style="margin-top:6px">Names in ticket logs can identify individuals. Use anonymized IDs in datasets and dashboards shared outside IT leadership.</div>
+          </div>
+          <div class="pii-card">
+            <div class="pii-type">📧 Contact Information</div>
+            <div class="pii-example">Email address, phone number, office location, workstation ID</div>
+            <div class="pii-note" style="margin:6px 0">Raw: <span class="pii-masked">jsmith@hospital.org · ext. 4821</span></div>
+            <div class="pii-note">Safe: <span class="pii-safe">user_4821@[masked] · Bldg C Floor 3</span></div>
+            <div class="pii-note" style="margin-top:6px">Email and phone in ticket descriptions are common. Mask before exporting or training any AI model.</div>
+          </div>
+          <div class="pii-card">
+            <div class="pii-type">🔐 Credentials & Access</div>
+            <div class="pii-example">Password reset requests, MFA codes, VPN credentials, Active Directory group membership</div>
+            <div class="pii-note" style="margin:6px 0">Raw: <span class="pii-masked">User locked out · AD Group: HR-Payroll</span></div>
+            <div class="pii-note">Safe: <span class="pii-safe">Access issue · Group: [REDACTED]</span></div>
+            <div class="pii-note" style="margin-top:6px">AD group names and access level details reveal org structure and privilege. Always redact from shared logs.</div>
+          </div>
+          <div class="pii-card">
+            <div class="pii-type">💻 Device & Asset Data</div>
+            <div class="pii-example">Device serial number, MAC address, IP address, IMEI, asset tag tied to a user</div>
+            <div class="pii-note" style="margin:6px 0">Raw: <span class="pii-masked">MAC: 00:1A:2B:3C:4D:5E</span></div>
+            <div class="pii-note">Safe: <span class="pii-safe">ASSET-TAG-7734 · Type: Laptop</span></div>
+            <div class="pii-note" style="margin-top:6px">Device identifiers can be cross-referenced to locate or track individuals. Use asset tags only in exported data.</div>
+          </div>
+          <div class="pii-card">
+            <div class="pii-type">🏥 Healthcare-Specific (HIPAA)</div>
+            <div class="pii-example">Patient name in ticket description, EHR system access requests, clinical app errors mentioning patient data</div>
+            <div class="pii-note" style="margin:6px 0">Raw: <span class="pii-masked">EHR error for pt. Jane Doe DOB 01/01/1980</span></div>
+            <div class="pii-note">Safe: <span class="pii-safe">EHR system error · Patient ref: [PHI REMOVED]</span></div>
+            <div class="pii-note" style="margin-top:6px">Any ticket touching clinical systems may inadvertently capture PHI. Flag and escalate immediately per HIPAA policy.</div>
+          </div>
+          <div class="pii-card">
+            <div class="pii-type">📋 Behavioral / Performance</div>
+            <div class="pii-example">Technician resolution rates, individual performance scores, reassignment history by name</div>
+            <div class="pii-note" style="margin:6px 0">Raw: <span class="pii-masked">R. Patel — 8 tickets, 3 reassignments</span></div>
+            <div class="pii-note">Safe: <span class="pii-safe">TECH-ID-07 — 8 tickets, 3 reassignments</span></div>
+            <div class="pii-note" style="margin-top:6px">Performance data tied to named technicians may trigger HR/legal concerns. Use anonymized IDs in analysis exports.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PII SCANNER -->
+    <section id="section-piiscanner" style="display:none">
+      <div class="pii-scan-banner">
+        <div class="scan-icon">🛡️</div>
+        <div>
+          <h3>AI-Powered PII Scanner</h3>
+          <p>Scans ticket descriptions for exposed PII before routing. HIPAA-flagged tickets are blocked from assignment until cleared by a compliance officer.</p>
+        </div>
+        <div class="scan-actions">
+          <button class="btn btn-ghost" onclick="resetScans()">Reset</button>
+          <button class="btn btn-primary" id="scanAllBtn" onclick="scanAll()">🔍 Scan All Tickets</button>
+        </div>
+      </div>
+
+      <div class="scan-summary">
+        <div class="scan-sum-card">
+          <div class="scan-sum-val" id="sumTotal" style="color:var(--accent)">10</div>
+          <div class="scan-sum-label">Tickets in Queue</div>
+        </div>
+        <div class="scan-sum-card">
+          <div class="scan-sum-val" id="sumScanned" style="color:var(--muted)">0</div>
+          <div class="scan-sum-label">Scanned</div>
+        </div>
+        <div class="scan-sum-card">
+          <div class="scan-sum-val" id="sumFlagged" style="color:var(--danger)">0</div>
+          <div class="scan-sum-label">PII Flagged</div>
+        </div>
+        <div class="scan-sum-card">
+          <div class="scan-sum-val" id="sumBlocked" style="color:var(--warn)">0</div>
+          <div class="scan-sum-label">Routing Blocked</div>
+        </div>
+      </div>
+
+      <div id="piiTicketList"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Override AI Recommendation</div>
+    <div class="modal-sub" id="modalSub">Manually assign this ticket to a different technician.</div>
+    <div class="modal-field">
+      <div class="modal-label">Ticket</div>
+      <div class="modal-value" id="modalTicket">—</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">AI Recommended</div>
+      <div class="modal-value" id="modalRec">—</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Assign To</div>
+      <select class="modal-select" id="modalAssignee">
+        <option>M. Torres (T3) — Network Specialist</option>
+        <option>D. Kim (T2) — VPN / Access</option>
+        <option>R. Patel (T1) — General Support</option>
+        <option>A. Johnson (T2) — Hardware</option>
+        <option>L. Chen (T3) — Systems Admin</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <div class="modal-label">Reason for Override</div>
+      <textarea class="modal-textarea" id="modalReason" placeholder="Optional: document your reasoning..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmOverride()">Confirm Reassignment</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- DATA ----
+const tickets = [
+  { id:'TKT-0041', cat:'Network Outage', priority:'critical', assignee:'R. Patel', status:'progress', risk:94, reassigns:3 },
+  { id:'TKT-0038', cat:'VPN Access', priority:'high', assignee:'A. Johnson', status:'pending', risk:81, reassigns:2 },
+  { id:'TKT-0035', cat:'Password Reset', priority:'low', assignee:'D. Kim', status:'progress', risk:12, reassigns:0 },
+  { id:'TKT-0033', cat:'Hardware Failure', priority:'high', assignee:'M. Torres', status:'progress', risk:67, reassigns:1 },
+  { id:'TKT-0029', cat:'Software Install', priority:'medium', assignee:'R. Patel', status:'open', risk:45, reassigns:1 },
+  { id:'TKT-0027', cat:'Email Issue', priority:'medium', assignee:'L. Chen', status:'pending', risk:38, reassigns:0 },
+  { id:'TKT-0025', cat:'MFA Setup', priority:'low', assignee:'D. Kim', status:'resolved', risk:5, reassigns:0 },
+  { id:'TKT-0022', cat:'Printer Offline', priority:'low', assignee:'A. Johnson', status:'open', risk:22, reassigns:1 },
+  { id:'TKT-0019', cat:'EHR System Error', priority:'critical', assignee:'L. Chen', status:'progress', risk:88, reassigns:2 },
+  { id:'TKT-0015', cat:'Active Directory', priority:'high', assignee:'M. Torres', status:'open', risk:55, reassigns:1 },
+];
+
+const techs = [
+  { name:'M. Torres', tier:'Tier 3 · Network', load:42, tickets:4, resolved:31 },
+  { name:'D. Kim', tier:'Tier 2 · VPN/Access', load:58, tickets:5, resolved:28 },
+  { name:'R. Patel', tier:'Tier 1 · General', load:91, tickets:8, resolved:19 },
+  { name:'A. Johnson', tier:'Tier 2 · Hardware', load:64, tickets:6, resolved:24 },
+  { name:'L. Chen', tier:'Tier 3 · Systems', load:47, tickets:4, resolved:33 },
+  { name:'J. Okafor', tier:'Tier 1 · General', load:33, tickets:3, resolved:15 },
+];
+
+const recs = [
+  { ticket:'TKT-0041', cat:'Network Outage', tech:'M. Torres (T3)', reason:'Lowest reassignment rate for network issues (0.4 avg). Currently at 42% capacity.', conf:91 },
+  { ticket:'TKT-0038', cat:'VPN Access', tech:'D. Kim (T2)', reason:'Resolved 12 similar VPN tickets in last 30 days. Avg resolution: 1.2 hrs.', conf:84 },
+  { ticket:'TKT-0019', cat:'EHR System Error', tech:'L. Chen (T3)', reason:'Systems admin with direct EHR access privileges. Resolved 3 similar tickets this month.', conf:78 },
+  { ticket:'TKT-0015', cat:'Active Directory', tech:'L. Chen (T3)', reason:'Handled 8 AD-related tickets in Q1 with 0 reassignments. Best match by category history.', conf:88 },
+];
+
+// ---- RENDER ----
+function renderTickets(data) {
+  const body = document.getElementById('ticketBody');
+  body.innerHTML = data.map(t => {
+    const riskClass = t.risk >= 70 ? 'high' : t.risk >= 40 ? 'med' : 'low';
+    const riskPct = t.risk;
+    const rAssign = t.reassigns >= 3 ? 'danger' : t.reassigns >= 2 ? 'warn' : 'ok';
+    return `<tr data-priority="${t.priority}">
+      <td style="font-family:monospace;font-size:12px;color:var(--accent)">${t.id}</td>
+      <td>${t.cat}</td>
+      <td><span class="priority ${t.priority}">${t.priority}</span></td>
+      <td style="font-size:12px">${t.assignee}</td>
+      <td><span class="status ${t.status === 'In Progress' ? 'progress' : t.status}"><span class="status-dot"></span>${t.status}</span></td>
+      <td>
+        <div class="risk-bar">
+          <div class="risk-track"><div class="risk-fill ${riskClass}" style="width:${riskPct}%"></div></div>
+          <span class="risk-pct ${riskClass}">${riskPct}%</span>
+        </div>
+      </td>
+      <td><span class="reassign-tag ${rAssign}">${t.reassigns}×</span></td>
+      <td><button class="btn btn-primary btn-sm" onclick="openModal('${t.id}')">Route</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderWorkload() {
+  const grid = document.getElementById('workloadGrid');
+  grid.innerHTML = techs.map(t => {
+    const cls = t.load >= 80 ? 'wl-high' : t.load >= 60 ? 'wl-med' : 'wl-low';
+    return `<div class="workload-card">
+      <div class="tech-name">${t.name}</div>
+      <div class="tech-tier">${t.tier}</div>
+      <div class="workload-bar-track"><div class="workload-bar-fill ${cls}" style="width:${t.load}%"></div></div>
+      <div class="workload-stats"><span>${t.load}% capacity</span><span>${t.tickets} open tickets</span></div>
+      <div class="workload-stats" style="margin-top:4px"><span style="color:var(--success)">✓ ${t.resolved} resolved</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderRecs() {
+  const list = document.getElementById('recList');
+  list.innerHTML = recs.map(r => `
+    <div class="ai-card">
+      <div style="flex:1">
+        <div class="ai-ticket-id">${r.ticket} · ${r.cat}</div>
+        <div class="ai-rec-text">Route to <strong>${r.tech}</strong> — ${r.reason}</div>
+        <div class="ai-confidence">Confidence: <span class="confidence-val">${r.conf}%</span></div>
+      </div>
+      <div class="ai-actions">
+        <button class="btn btn-primary btn-sm" onclick="acceptRec('${r.ticket}','${r.tech}')">Accept</button>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('${r.ticket}')">Override</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ---- NAVIGATION ----
+function showSection(id) {
+  document.querySelectorAll('main > section').forEach(s => s.style.display = 'none');
+  document.getElementById('section-' + id).style.display = '';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.target.closest('.nav-item').classList.add('active');
+}
+
+// ---- FILTER ----
+let currentFilter = 'all';
+function filterPriority(priority, btn) {
+  currentFilter = priority;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter();
+}
+function filterTable(val) {
+  applyFilter(val);
+}
+function applyFilter(search='') {
+  const rows = document.querySelectorAll('#ticketBody tr');
+  rows.forEach(r => {
+    const matchP = currentFilter === 'all' || r.dataset.priority === currentFilter;
+    const matchS = !search || r.textContent.toLowerCase().includes(search.toLowerCase());
+    r.style.display = matchP && matchS ? '' : 'none';
+  });
+}
+
+// ---- MODAL ----
+let currentModalTicket = '';
+const recMap = { 'TKT-0041': 'M. Torres (T3)', 'TKT-0038': 'D. Kim (T2)', 'TKT-0019': 'L. Chen (T3)', 'TKT-0015': 'L. Chen (T3)' };
+
+function openModal(ticketId) {
+  currentModalTicket = ticketId;
+  document.getElementById('modalTicket').textContent = ticketId;
+  document.getElementById('modalRec').textContent = recMap[ticketId] || 'No AI recommendation available';
+  document.getElementById('modalReason').value = '';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+function confirmOverride() {
+  const assignee = document.getElementById('modalAssignee').value.split(' (')[0];
+  showToast(`✅ ${currentModalTicket} reassigned to ${assignee}`);
+  closeModal();
+}
+document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target === e.currentTarget) closeModal(); });
+
+// ---- ACTIONS ----
+function acceptRec(ticket, tech) {
+  showToast(`✅ ${ticket} routed to ${tech}`);
+}
+function acknowledgeAlert(btn, ticket) {
+  btn.textContent = '✓ Noted';
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+}
+function ackAlert(id) {
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if(el) { el.style.opacity = '0.4'; el.querySelector('button').textContent = '✓ Done'; el.querySelector('button').disabled = true; }
+  const count = document.getElementById('alertCount');
+  let n = parseInt(count.textContent);
+  count.textContent = Math.max(0, n-1) + ' Alerts';
+}
+
+// ---- TOAST ----
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#22c55e;color:#000;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:fadeIn 0.2s';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ---- AI CHAT ----
+const ticketContext = JSON.stringify(tickets);
+const techContext = JSON.stringify(techs);
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const log = document.getElementById('chatLog');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  input.value = '';
+  document.getElementById('chatSend').disabled = true;
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg user';
+  userMsg.textContent = msg;
+  log.appendChild(userMsg);
+
+  const typing = document.createElement('div');
+  typing.className = 'chat-msg ai typing';
+  typing.innerHTML = '<span></span><span></span><span></span>';
+  log.appendChild(typing);
+  log.scrollTop = log.scrollHeight;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: `You are an AI Ticket Management Assistant for an enterprise IT helpdesk. You have access to live ticket data and technician workload. Be concise, direct, and action-oriented. Always cite specific ticket IDs or technician names when relevant.
+
+Current Tickets: ${ticketContext}
+Technician Workload: ${techContext}
+
+Key rules:
+- Never reveal real PII (use anonymized IDs in examples)
+- Flag any healthcare/HIPAA-sensitive tickets immediately
+- Focus on SLA risk, routing recommendations, and bottleneck prevention
+- Respond in 2-4 sentences unless detail is explicitly requested`,
+        messages: [{ role: 'user', content: msg }]
+      })
+    });
+    const data = await res.json();
+    typing.remove();
+    const reply = data.content?.[0]?.text || 'Sorry, I could not process that.';
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'chat-msg ai';
+    aiMsg.textContent = reply;
+    log.appendChild(aiMsg);
+  } catch(e) {
+    typing.remove();
+    const err = document.createElement('div');
+    err.className = 'chat-msg ai';
+    err.textContent = 'Connection error. Please try again.';
+    log.appendChild(err);
+  }
+
+  document.getElementById('chatSend').disabled = false;
+  log.scrollTop = log.scrollHeight;
+}
+
+// ---- PII SCANNER DATA ----
+// Realistic ticket descriptions — some contain PII intentionally for demo
+const ticketDescriptions = {
+  'TKT-0041': 'User John Smith (jsmith@jhmi.edu, ext. 4821) reported complete network outage on Floor 3 East Wing. Workstation IP: 192.168.10.44, MAC: 00:1A:2B:3C:4D:5E. Employee ID EMP-4821 confirmed via AD lookup. Switch port Gi0/12 shows no link. Escalated from T1.',
+  'TKT-0038': 'Dr. Maria Gonzalez (mgonzalez@jhmi.edu) unable to connect to VPN since 08:00. She is in AD group "Clinical-Radiology-PHI" and requires access to patient imaging system. Her credentials reset yesterday — MFA token may not be synced. Mobile: 443-555-0192.',
+  'TKT-0035': 'Password reset requested for user account r.patel. Standard reset procedure. No PII in description. Ticket submitted via self-service portal.',
+  'TKT-0033': 'Laptop serial SN-XK8823901 belonging to Finance department user Ken Broderick (kbroderick@jhmi.edu) will not POST. Asset tag ASSET-7734. Assigned to Building C Floor 2. Device needs hardware inspection.',
+  'TKT-0029': 'Request to install Adobe Acrobat Pro on workstation WKSTN-0229. Standard software provisioning. Submitted by IT coordinator. No sensitive data involved.',
+  'TKT-0027': 'User lisa.starks@jhmi.edu reports Outlook not syncing since migration. No calendar access. Device: DELL-LAPTOP-0091. Standard email troubleshooting ticket.',
+  'TKT-0025': 'MFA setup for new hire — account created, enrollment link sent. No additional detail required.',
+  'TKT-0022': 'HP LaserJet on Floor 2 West offline. IP: 10.0.2.88. No user PII involved. Standard device restart attempted. Needs technician on-site.',
+  'TKT-0019': 'CRITICAL: EHR application threw unhandled exception for patient Jane Doe, DOB 01/15/1968, MRN 7734821, during a cardiology note entry session. Error log attached. User Dr. Patel (dpatel@jhmi.edu) witnessed crash. Patient was mid-consultation. HIPAA incident may apply.',
+  'TKT-0015': 'Active Directory account for terminated employee Nathan Hutton (nhutton@jhmi.edu, EMP-2209) not yet disabled. Account still has access to HR-Payroll and Finance-Restricted AD groups. Security team notified. Immediate action required.',
+};
+
+// Scan state
+const scanState = {};
+
+function resetScans() {
+  Object.keys(scanState).forEach(k => delete scanState[k]);
+  renderPiiList();
+  updateScanSummary();
+}
+
+function renderPiiList() {
+  const list = document.getElementById('piiTicketList');
+  list.innerHTML = tickets.map(t => {
+    const state = scanState[t.id];
+    const desc = ticketDescriptions[t.id] || 'No description available.';
+    let statusBadge = '<span class="ptc-status-badge pending">⬜ Not Scanned</span>';
+    let bodyContent = `<div class="ptc-desc-label">Ticket Description</div><div class="ptc-desc">${escHtml(desc)}</div>`;
+    let footerContent = `<span style="font-size:12px;color:var(--muted)">Run scan to check for PII before routing</span><button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="scanOne('${t.id}')">🔍 Scan</button>`;
+
+    if (state === 'scanning') {
+      statusBadge = '<span class="ptc-status-badge scanning"><span class="spinner"></span> Scanning…</span>';
+      footerContent = `<span style="font-size:12px;color:var(--accent)">AI scanning in progress…</span>`;
+    } else if (state && state.done) {
+      const r = state.result;
+      if (r.status === 'clean') {
+        statusBadge = '<span class="ptc-status-badge clean">✅ Clean</span>';
+        bodyContent = `<div class="ptc-desc-label">Ticket Description</div><div class="ptc-desc">${escHtml(desc)}</div>`;
+        footerContent = `<span class="route-clear">✅ No PII detected — safe to route</span><button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openModal('${t.id}')">Route Ticket →</button>`;
+      } else if (r.status === 'hipaa') {
+        statusBadge = '<span class="ptc-status-badge hipaa">🚨 HIPAA — PHI DETECTED</span>';
+        bodyContent = buildFlaggedDesc(desc, r) + buildFindings(r);
+        footerContent = `<span class="route-blocked">🚫 Routing BLOCKED — PHI must be redacted. Escalate to Compliance Officer.</span><button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="redactAndClear('${t.id}')">Redact & Clear</button>`;
+      } else {
+        statusBadge = '<span class="ptc-status-badge flagged">⚠️ PII Flagged</span>';
+        bodyContent = buildFlaggedDesc(desc, r) + buildFindings(r);
+        footerContent = `<span class="route-blocked">⚠️ PII detected — review findings before routing</span><button class="btn btn-ghost btn-sm" onclick="redactAndClear('${t.id}')">Mark Reviewed</button><button class="btn btn-primary btn-sm" onclick="openModal('${t.id}')">Route Anyway →</button>`;
+      }
+    }
+
+    const cardClass = state && state.done ? (state.result.status === 'clean' ? 'clean' : state.result.status === 'hipaa' ? 'hipaa' : 'flagged') : '';
+    return `<div class="pii-ticket-card ${cardClass}" id="ptc-${t.id}">
+      <div class="ptc-header">
+        <span class="ptc-id">${t.id}</span>
+        <span class="ptc-cat">${t.cat}</span>
+        <span class="priority ${t.priority}" style="margin-left:8px">${t.priority}</span>
+        ${statusBadge}
+      </div>
+      <div class="ptc-body">
+        ${bodyContent}
+      </div>
+      <div class="ptc-footer">${footerContent}</div>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function buildFlaggedDesc(desc, result) {
+  let highlighted = escHtml(desc);
+  (result.piiFound || []).forEach(p => {
+    const cls = p.type === 'PHI' ? 'hipaa-hit' : 'pii-hit';
+    const escaped = escHtml(p.value);
+    highlighted = highlighted.replace(escaped, `<span class="${cls}">${escaped}</span>`);
+  });
+  return `<div class="ptc-desc-label">Ticket Description — PII Highlighted</div><div class="ptc-desc">${highlighted}</div><div class="ptc-findings">`;
+}
+
+function buildFindings(result) {
+  const items = (result.piiFound || []).map(p => {
+    const sev = p.type === 'PHI' ? 'critical' : 'warning';
+    return `<div class="finding-item ${sev}">
+      <span class="finding-label ${sev}">${p.type}</span>
+      <span class="finding-detail">${escHtml(p.value)} — ${p.reason}</span>
+    </div>`;
+  }).join('');
+  return items + '</div>';
+}
+
+async function scanOne(ticketId) {
+  scanState[ticketId] = 'scanning';
+  renderPiiList();
+
+  const desc = ticketDescriptions[ticketId] || '';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: `You are a PII and HIPAA compliance scanner for an IT helpdesk system. Analyze the ticket description and identify any PII or PHI.
+
+Respond ONLY with a valid JSON object — no markdown, no explanation, no backticks.
+
+JSON format:
+{
+  "status": "clean" | "flagged" | "hipaa",
+  "summary": "one sentence summary of findings",
+  "piiFound": [
+    { "type": "EMAIL|PHONE|NAME|IP_ADDRESS|DEVICE_ID|EMPLOYEE_ID|AD_GROUP|PHI|CREDENTIALS", "value": "exact text found", "reason": "why this is PII/PHI" }
+  ]
+}
+
+Rules:
+- "hipaa" status if any patient health information, patient names, MRN, diagnosis, or clinical data is present
+- "flagged" if employee PII like email, phone, name, IP, device ID, AD group is present but no PHI
+- "clean" if no PII of any kind is present
+- piiFound array is empty if status is "clean"
+- Extract the EXACT substring from the description as the "value"`,
+        messages: [{ role: 'user', content: `Scan this ticket description for PII:\n\n${desc}` }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '{}';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+    scanState[ticketId] = { done: true, result };
+  } catch(e) {
+    scanState[ticketId] = { done: true, result: { status: 'clean', summary: 'Scan error — manual review recommended.', piiFound: [] } };
+  }
+
+  renderPiiList();
+  updateScanSummary();
+}
+
+async function scanAll() {
+  const btn = document.getElementById('scanAllBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Scanning…';
+
+  // Scan sequentially to avoid rate limits
+  for (const t of tickets) {
+    if (!scanState[t.id] || !scanState[t.id].done) {
+      await scanOne(t.id);
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔄 Re-Scan All';
+  updateScanSummary();
+  updatePiiNavBadge();
+}
+
+function updateScanSummary() {
+  const scanned = Object.values(scanState).filter(s => s && s.done).length;
+  const flagged = Object.values(scanState).filter(s => s && s.done && (s.result.status === 'flagged' || s.result.status === 'hipaa')).length;
+  const blocked = Object.values(scanState).filter(s => s && s.done && s.result.status === 'hipaa').length;
+  document.getElementById('sumScanned').textContent = scanned;
+  document.getElementById('sumFlagged').textContent = flagged;
+  document.getElementById('sumBlocked').textContent = blocked;
+  updatePiiNavBadge();
+}
+
+function updatePiiNavBadge() {
+  const flagged = Object.values(scanState).filter(s => s && s.done && s.result.status !== 'clean').length;
+  const badge = document.getElementById('piiNavCount');
+  badge.textContent = flagged > 0 ? flagged : '—';
+}
+
+function redactAndClear(ticketId) {
+  if (scanState[ticketId] && scanState[ticketId].done) {
+    scanState[ticketId].result.status = 'clean';
+    scanState[ticketId].result.summary = 'PII redacted and cleared by compliance review.';
+    scanState[ticketId].result.piiFound = [];
+    renderPiiList();
+    updateScanSummary();
+    showToast(`✅ ${ticketId} cleared — PII redacted. Safe to route.`);
+  }
+}
+
+// ---- INIT ----
+renderTickets(tickets);
+renderWorkload();
+renderRecs();
+renderPiiList();
+</script>
+</body>
+</html>
