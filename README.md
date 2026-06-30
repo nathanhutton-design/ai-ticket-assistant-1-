@@ -1,5 +1,17 @@
 # AI-Powered Ticket Management Assistant
 
+## Download
+You can download the repository as a ZIP or tarball directly from GitHub:
+
+- ZIP: https://github.com/nathanhutton-design/ai-ticket-assistant-1-/archive/refs/heads/main.zip
+- tar.gz: https://github.com/nathanhutton-design/ai-ticket-assistant-1-/archive/refs/heads/main.tar.gz
+
+Alternatively, clone the repo locally:
+
+```
+git clone https://github.com/nathanhutton-design/ai-ticket-assistant-1-.git
+```
+
 ## Overview
 AI-Powered Ticket Management Assistant is a project built for an AI product design course. The application helps IT Help Desk managers reduce ticket delays by using AI to identify tickets at risk of missing SLA deadlines, recommend the best technician for each ticket, and surface workflow bottlenecks before they affect employees or customers. The goal is to improve response times, reduce reassignments, and increase operational efficiency across support teams.
 
