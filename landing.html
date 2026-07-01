@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI-Powered Ticket Management Assistant</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --accent: #00c2ff;
+    --accent2: #7c3aed;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --font-display: 'Segoe UI', system-ui, sans-serif;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-display); min-height: 100vh; }
+  
+  /* NAVIGATION */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--text);
+  }
+  
+  .nav-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .nav-link {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  
+  .nav-link:hover {
+    color: var(--accent);
+  }
+  
+  /* HERO SECTION */
+  .hero {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Gradient background elements */
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0, 194, 255, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    top: -200px;
+    right: -200px;
+    z-index: 0;
+  }
+  
+  .hero::after {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.06) 0%, transparent 70%);
+    border-radius: 50%;
+    bottom: -150px;
+    left: -150px;
+    z-index: 0;
+  }
+  
+  .hero-content {
+    max-width: 720px;
+    text-align: center;
+    z-index: 1;
+    position: relative;
+  }
+  
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 194, 255, 0.1);
+    border: 1px solid rgba(0, 194, 255, 0.3);
+    color: var(--accent);
+    padding: 8px 14px;
+    border-radius: 24px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 24px;
+  }
+  
+  .hero-badge::before {
+    content: '✨';
+  }
+  
+  .hero-headline {
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 20px;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .hero-description {
+    font-size: 18px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 36px;
+  }
+  
+  /* BUTTONS */
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .btn {
+    padding: 14px 32px;
+    border-radius: 10px;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 160px;
+  }
+  
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  
+  .btn-primary:hover {
+    opacity: 0.85;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 194, 255, 0.2);
+  }
+  
+  .btn-secondary {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--text);
+  }
+  
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0, 194, 255, 0.05);
+  }
+  
+  /* FEATURES PREVIEW (optional, subtle) */
+  .feature-hint {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+  
+  .feature-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    nav {
+      padding: 16px 20px;
+    }
+    
+    .hero {
+      padding: 40px 20px;
+      min-height: auto;
+    }
+    
+    .hero-headline {
+      font-size: 36px;
+    }
+    
+    .hero-description {
+      font-size: 16px;
+    }
+    
+    .hero-actions {
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .btn {
+      width: 100%;
+    }
+    
+    .feature-hint {
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .nav-link {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+  <!-- NAVIGATION -->
+  <nav>
+    <a href="landing.html" class="nav-brand">
+      <div class="nav-icon">⚡</div>
+      <span>TicketAI</span>
+    </a>
+    <div class="nav-right">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#about" class="nav-link">About</a>
+      <a href="index.html" class="btn btn-primary" style="padding: 8px 16px; min-width: auto; font-size: 13px;">Dashboard</a>
+    </div>
+  </nav>
+  
+  <!-- HERO SECTION -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">AI-Powered Ticket Management</div>
+      
+      <h1 class="hero-headline">
+        Prevent IT Delays Before They Disrupt Your Business
+      </h1>
+      
+      <p class="hero-description">
+        Our AI-powered system predicts ticket delays before they happen and recommends the best technician for each task. Reduce resolution time, improve customer satisfaction, and optimize your IT team's efficiency.
+      </p>
+      
+      <div class="hero-actions">
+        <a href="index.html" class="btn btn-primary">View Dashboard</a>
+        <button class="btn btn-secondary" onclick="scrollToFeatures()">Learn More</button>
+      </div>
+      
+      <!-- Feature Hints -->
+      <div class="feature-hint">
+        <div class="feature-item">
+          <div class="feature-icon">🤖</div>
+          <span>AI Predictions</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">👥</div>
+          <span>Smart Assignment</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">⚡</div>
+          <span>Real-time Monitoring</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">📊</div>
+          <span>Analytics & Insights</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <script>
+    function scrollToFeatures() {
+      // Navigate to dashboard with features section
+      window.location.href = 'index.html#features';
+    }
+  </script>
+</body>
+</html>
