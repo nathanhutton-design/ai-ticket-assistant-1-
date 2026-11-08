@@ -192,6 +192,11 @@
   .ai-chat-log { min-height: 120px; max-height: 240px; overflow-y: auto; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px; }
   .chat-msg { padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height: 1.5; max-width: 85%; }
   .chat-msg.ai { background: rgba(0,194,255,0.08); border: 1px solid rgba(0,194,255,0.2); color: var(--text); align-self: flex-start; }
+  .chat-msg.ai p { margin: 0 0 6px; }
+  .chat-msg.ai p:last-child, .chat-msg.ai ul:last-child, .chat-msg.ai ol:last-child { margin-bottom: 0; }
+  .chat-msg.ai ul, .chat-msg.ai ol { margin: 0 0 6px; padding-left: 18px; }
+  .chat-msg.ai li { margin-bottom: 3px; }
+  .chat-msg.ai .md-h { font-weight: 700; margin: 0 0 6px; }
   .chat-msg.user { background: var(--surface2); border: 1px solid var(--border); color: var(--text); align-self: flex-end; }
   .chat-input-row { display: flex; gap: 8px; }
   .chat-input { flex: 1; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; font-family: inherit; outline: none; }
@@ -283,7 +288,7 @@
     AI Ticket Management Assistant
   </div>
   <div class="header-right">
-    <span style="font-size:12px;color:var(--muted);">Johns Hopkins Health System — IT Ops</span>
+    <span style="font-size:12px;color:var(--muted);">Metro Health System — IT Ops (sample data)</span>
     <span class="badge-alert" id="alertCount">3 Alerts</span>
     <div class="avatar">NH</div>
   </div>
@@ -835,7 +840,7 @@ Key rules:
     const reply = data.content?.[0]?.text || 'Sorry, I could not process that.';
     const aiMsg = document.createElement('div');
     aiMsg.className = 'chat-msg ai';
-    aiMsg.textContent = reply;
+    aiMsg.innerHTML = renderMarkdown(reply);
     log.appendChild(aiMsg);
   } catch(e) {
     typing.remove();
@@ -852,16 +857,16 @@ Key rules:
 // ---- PII SCANNER DATA ----
 // Realistic ticket descriptions — some contain PII intentionally for demo
 const ticketDescriptions = {
-  'TKT-0041': 'User John Smith (jsmith@jhmi.edu, ext. 4821) reported complete network outage on Floor 3 East Wing. Workstation IP: 192.168.10.44, MAC: 00:1A:2B:3C:4D:5E. Employee ID EMP-4821 confirmed via AD lookup. Switch port Gi0/12 shows no link. Escalated from T1.',
-  'TKT-0038': 'Dr. Maria Gonzalez (mgonzalez@jhmi.edu) unable to connect to VPN since 08:00. She is in AD group "Clinical-Radiology-PHI" and requires access to patient imaging system. Her credentials reset yesterday — MFA token may not be synced. Mobile: 443-555-0192.',
+  'TKT-0041': 'User John Smith (jsmith@metrohealth.example, ext. 4821) reported complete network outage on Floor 3 East Wing. Workstation IP: 192.168.10.44, MAC: 00:1A:2B:3C:4D:5E. Employee ID EMP-4821 confirmed via AD lookup. Switch port Gi0/12 shows no link. Escalated from T1.',
+  'TKT-0038': 'Dr. Maria Gonzalez (mgonzalez@metrohealth.example) unable to connect to VPN since 08:00. She is in AD group "Clinical-Radiology-PHI" and requires access to patient imaging system. Her credentials reset yesterday — MFA token may not be synced. Mobile: 443-555-0192.',
   'TKT-0035': 'Password reset requested for user account r.patel. Standard reset procedure. No PII in description. Ticket submitted via self-service portal.',
-  'TKT-0033': 'Laptop serial SN-XK8823901 belonging to Finance department user Ken Broderick (kbroderick@jhmi.edu) will not POST. Asset tag ASSET-7734. Assigned to Building C Floor 2. Device needs hardware inspection.',
+  'TKT-0033': 'Laptop serial SN-XK8823901 belonging to Finance department user Ken Broderick (kbroderick@metrohealth.example) will not POST. Asset tag ASSET-7734. Assigned to Building C Floor 2. Device needs hardware inspection.',
   'TKT-0029': 'Request to install Adobe Acrobat Pro on workstation WKSTN-0229. Standard software provisioning. Submitted by IT coordinator. No sensitive data involved.',
-  'TKT-0027': 'User lisa.starks@jhmi.edu reports Outlook not syncing since migration. No calendar access. Device: DELL-LAPTOP-0091. Standard email troubleshooting ticket.',
+  'TKT-0027': 'User lisa.starks@metrohealth.example reports Outlook not syncing since migration. No calendar access. Device: DELL-LAPTOP-0091. Standard email troubleshooting ticket.',
   'TKT-0025': 'MFA setup for new hire — account created, enrollment link sent. No additional detail required.',
   'TKT-0022': 'HP LaserJet on Floor 2 West offline. IP: 10.0.2.88. No user PII involved. Standard device restart attempted. Needs technician on-site.',
-  'TKT-0019': 'CRITICAL: EHR application threw unhandled exception for patient Jane Doe, DOB 01/15/1968, MRN 7734821, during a cardiology note entry session. Error log attached. User Dr. Patel (dpatel@jhmi.edu) witnessed crash. Patient was mid-consultation. HIPAA incident may apply.',
-  'TKT-0015': 'Active Directory account for terminated employee Nathan Hutton (nhutton@jhmi.edu, EMP-2209) not yet disabled. Account still has access to HR-Payroll and Finance-Restricted AD groups. Security team notified. Immediate action required.',
+  'TKT-0019': 'CRITICAL: EHR application threw unhandled exception for patient Jane Doe, DOB 01/15/1968, MRN 7734821, during a cardiology note entry session. Error log attached. User Dr. Patel (dpatel@metrohealth.example) witnessed crash. Patient was mid-consultation. HIPAA incident may apply.',
+  'TKT-0015': 'Active Directory account for terminated employee Nathan Hutton (nhutton@metrohealth.example, EMP-2209) not yet disabled. Account still has access to HR-Payroll and Finance-Restricted AD groups. Security team notified. Immediate action required.',
 };
 
 // Scan state
@@ -941,6 +946,30 @@ function buildFindings(result) {
     </div>`;
   }).join('');
   return items + '</div>';
+}
+
+// Turns the AI's Markdown reply into safe HTML (text is escaped first).
+function renderMarkdown(text) {
+  const esc = t => t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inline = t => esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>');
+  // Split numbered items onto their own lines if the reply ran them together.
+  const lines = text
+    .replace(/\s(\d+\.\s\*\*)/g,'\n$1')
+    .replace(/([.!?])\s+(\*\*[^*\n]{2,40}:\*\*)/g,'$1\n$2')
+    .split('\n');
+  let html = '', list = null;
+  const close = () => { if (list) { html += `</${list}>`; list = null; } };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { close(); continue; }
+    let m;
+    if ((m = line.match(/^#{1,6}\s+(.*)$/))) { close(); html += `<div class="md-h">${inline(m[1])}</div>`; }
+    else if ((m = line.match(/^\d+\.\s+(.*)$/))) { if (list !== 'ol') { close(); html += '<ol>'; list = 'ol'; } html += `<li>${inline(m[1])}</li>`; }
+    else if ((m = line.match(/^[-*]\s+(.*)$/))) { if (list !== 'ul') { close(); html += '<ul>'; list = 'ul'; } html += `<li>${inline(m[1])}</li>`; }
+    else { close(); html += `<p>${inline(line)}</p>`; }
+  }
+  close();
+  return html;
 }
 
 async function scanOne(ticketId) {
